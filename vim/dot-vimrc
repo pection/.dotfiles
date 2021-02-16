@@ -1,0 +1,392 @@
+set nocompatible
+map h <insert>
+map i <Up>
+map j <Left>
+map k <Down>
+let perl_fold = 1
+let perl_fold_blocks = 1
+
+set nofileignorecase
+set nowildignorecase
+set wildmode=longest,list,full
+set wildmenu
+set autoindent
+set ruler
+set expandtab
+set shiftwidth=4
+set softtabstop=4
+set tabstop=4
+set showmatch
+set incsearch
+set laststatus=2
+set nojoinspaces
+set cursorline
+set timeoutlen=50
+set cmdheight=1
+
+set number
+set relativenumber
+augroup numbertoggle
+  autocmd!
+  autocmd BufEnter,FocusGained,InsertLeave * set relativenumber
+  autocmd BufLeave,FocusLost,InsertEnter   * set norelativenumber
+augroup END
+
+syntax on
+
+" intelligent tab-completion
+inoremap <tab> <c-r>=InsertTabWrapper()<cr>
+function! InsertTabWrapper()
+    let col = col('.') - 1
+    if !col || getline('.')[col - 1] !~ '\k'
+        return "\<tab>"
+    else
+        return "\<c-n>"
+    endif
+endfunction
+" make tab-completion work better for perl
+autocmd FileType perl setlocal iskeyword+=:
+
+" use the FZF plugin; path assumes fzf was installed using Homebrew
+set rtp+=/usr/local/opt/fzf
+
+" the default is too dark for a dark terminal background
+highlight vimComment ctermfg=LightBlue
+highlight perlComment ctermfg=LightBlue
+highlight shComment ctermfg=LightBlue
+highlight rubyComment ctermfg=LightBlue
+highlight confComment ctermfg=LightBlue
+
+highlight LineNr cterm=NONE ctermfg=DarkGrey ctermbg=none
+highlight StatusLine   ctermfg=White ctermbg=Red  cterm=bold
+highlight StatusLineNC ctermfg=White ctermbg=Blue cterm=none
+
+highlight CursorLine term=bold cterm=bold ctermbg=242
+
+" :Diff
+function! s:DiffWithSaved()
+  let filetype=&ft
+  diffthis
+  vnew | r # | normal! 1Gdd
+  diffthis
+  exe "setlocal bt=nofile bh=wipe nobl noswf ro ft=" . filetype
+endfunction
+com! Diff call s:DiffWithSaved()
+
+" \mw to mark a window, \pw to swap marked and current
+function! MarkWindowSwap()
+    let g:markedWinNum = winnr()
+endfunction
+
+function! DoWindowSwap()
+    "Mark destination
+    let curNum = winnr()
+    let curBuf = bufnr( "%" )
+    exe g:markedWinNum . "wincmd w"
+    "Switch to source and shuffle dest->source
+    let markedBuf = bufnr( "%" )
+    "Hide and open so that we aren't prompted and keep history
+    exe 'hide buf' curBuf
+    "Switch to dest and shuffle source->dest
+    exe curNum . "wincmd w"
+    "Hide and open so that we aren't prompted and keep history
+    exe 'hide buf' markedBuf
+endfunction
+
+nmap <silent> <leader>mw :call MarkWindowSwap()<CR>
+nmap <silent> <leader>pw :call DoWindowSwap()<CR>
+
+augroup BgHighlight
+    autocmd!
+    autocmd WinEnter * set number
+    autocmd WinLeave * set nonumber
+augroup END
+
+let g:session_autosave = "yes"
+let g:session_autoload = "yes"
+
+" A command to perltidy and return the cursor whence it came.
+" This allows 3 modes of use:
+"    - In normal mode Ctl+t or :Tidy will tidy the whole buffer
+"    - In :command mode, you can say :Tidy 4,11 to tidy line 4 to 11
+"    - In Visual mode, hit Ctr+t or :Tidy to tidy the selected block
+"
+" Change the <C-t> mappings at the bottom to choose a different shortcut. ;)
+"
+" Courtesy of TehJim xxx *muwhaa*
+"
+function! g:PerlTidyWithoutMovingTheCursor(...)
+    let b:cursorPos = getpos('.')
+
+    " If we were called with params...
+    if a:0 == 2
+        execute "".a:1.",".a:2."!perltidy"
+
+    " In normal mode, we want to do the whole buffer
+    else
+        :%!perltidy
+    endif
+
+    redraw!
+    call cursor(b:cursorPos[1], b:cursorPos[2])
+endfunction
+command -range=% -nargs=* Tidy call g:PerlTidyWithoutMovingTheCursor(<args>)
+:nmap <C-t> :Tidy<CR>
+:vmap <C-t> :!perltidy<CR>
+
+call plug#begin('~/.vim/plugged')
+
+	" Statusbar
+	Plug 'vim-airline/vim-airline'
+	Plug 'vim-airline/vim-airline-themes'
+
+	" Git tools
+	Plug 'airblade/vim-gitgutter'
+	Plug 'tpope/vim-fugitive'
+	Plug 'junegunn/gv.vim'
+
+	" Sessions
+	Plug 'xolox/vim-session'
+	Plug 'xolox/vim-misc'
+
+	" Tools
+	Plug 'scrooloose/nerdcommenter'
+	Plug 'scrooloose/nerdtree'
+	Plug 'valloric/listtoggle'
+	Plug 'majutsushi/tagbar'
+	Plug 'ctrlpvim/ctrlp.vim'
+	Plug 'mbbill/undotree'
+	Plug 'dense-analysis/ale'
+
+	" Deoplete, specific for Vim8
+	if !has("nvim")
+		Plug 'roxma/nvim-yarp'
+		Plug 'roxma/vim-hug-neovim-rpc'
+	endif
+
+	" Autocomplete
+	Plug 'Shougo/deoplete.nvim', { 'commit': '17ffeb9' }
+	Plug 'Shougo/neosnippet.vim', { 'commit': '037b7a7' }
+	Plug 'Shougo/neosnippet-snippets'
+	Plug 'Shougo/context_filetype.vim'
+	Plug 'ervandew/supertab'
+
+	" C/C++ support
+	Plug 'deoplete-plugins/deoplete-clang', { 'commit': '30f17cb' }
+
+	" Go support
+	Plug 'fatih/vim-go', { 'tag': 'v1.19' }
+	Plug 'nsf/gocode', { 'rtp': 'vim', 'do': '~/.vim/plugged/gocode/vim/symlink.sh' }
+	Plug 'deoplete-plugins/deoplete-go', { 'commit': 'fa73f06'}
+
+	" Perl support
+	Plug 'c9s/perlomni.vim'
+
+	" Python support
+	Plug 'deoplete-plugins/deoplete-jedi', { 'commit': '46121d9' }
+
+	" Ruby support
+	Plug 'vim-ruby/vim-ruby'
+	Plug 'tpope/vim-rails'
+	Plug 'tpope/vim-endwise'
+	Plug 'tpope/vim-liquid'
+
+	" PHP support
+	Plug 'shawncplus/phpcomplete.vim'
+
+	" Haskell support
+	Plug 'eagletmt/neco-ghc'
+
+	" Rust support
+	Plug 'racer-rust/vim-racer'
+
+	" Zsh support
+	Plug 'deoplete-plugins/deoplete-zsh', { 'commit': '12141ad' }
+
+	" JavaScript support
+	Plug 'ternjs/tern_for_vim', { 'do': 'npm install' }
+	Plug 'carlitux/deoplete-ternjs', { 'do': 'npm install -g tern' }
+	Plug 'othree/jspc.vim'
+	Plug 'maksimr/vim-jsbeautify'
+
+	" VimL support
+	Plug 'Shougo/neco-vim', { 'commit' : '4c0203b' }
+
+	" Additional syntax files
+	Plug 'othree/html5.vim'
+	Plug 'vim-language-dept/css-syntax.vim'
+	Plug 'hail2u/vim-css3-syntax'
+	Plug 'pangloss/vim-javascript'
+	Plug 'Shougo/neco-syntax', { 'commit': '98cba4a' }
+	Plug 'mboughaba/i3config.vim'
+	Plug 'aklt/plantuml-syntax'
+	Plug 'gerardbm/asy.vim'
+	Plug 'gerardbm/eukleides.vim'
+
+	" Edition
+	Plug 'junegunn/vim-easy-align'
+	Plug 'godlygeek/tabular'
+	Plug 'jiangmiao/auto-pairs'
+	Plug 'alvan/vim-closetag'
+	Plug 'tpope/vim-surround'
+	Plug 'tpope/vim-repeat'
+	Plug 'tpope/vim-capslock'
+	Plug 'wellle/targets.vim'
+	Plug 'christoomey/vim-sort-motion'
+	Plug 'terryma/vim-expand-region'
+	Plug 'Valloric/MatchTagAlways'
+	Plug 'FooSoft/vim-argwrap'
+	Plug 'gerardbm/vim-md-headings'
+	Plug 'matze/vim-move'
+
+	" Misc
+	Plug 'christoomey/vim-tmux-navigator'
+	Plug 'tpope/vim-characterize'
+	Plug 'tyru/open-browser.vim'
+	Plug 'junegunn/goyo.vim'
+	Plug 'mattn/webapi-vim'
+	Plug 'mattn/emmet-vim'
+	Plug 'vimwiki/vimwiki', { 'branch': 'master' }
+
+	" Color schemes
+	Plug 'gerardbm/vim-atomic'
+
+call plug#end()
+
+execute pathogen#infect()
+
+syntax on
+filetype plugin indent on
+
+
+
+let g:unite_force_overwrite_statusline = 0
+let g:vimfiler_force_overwrite_statusline = 0
+let g:vimshell_force_overwrite_statusline = 0
+let g:python3_host_prog       = '/usr/bin/python3'
+let g:python3_host_skip_check = 1
+set completeopt-=menu
+set completeopt+=menuone   " Show the completions UI even with only 1 item
+set completeopt-=longest   " Don't insert the longest common text
+set completeopt-=preview   " Hide the documentation preview window
+set completeopt+=noinsert  " Don't insert text automatically
+set completeopt-=noselect  " Highlight the first completion automatically
+set statusline=%<%f\ %h%m%r%{kite#statusline()}%=%-14.(%l,%c%V%)\ %P
+set laststatus=2
+let g:kite_auto_complete=1
+let g:kite_tab_complete=1
+let g:kite_log=1
+call airline#parts#define_accent('mode', 'black')
+nmap <silent><Leader>m :NERDTreeToggle<CR>
+:let g:NERDTreeWinSize=30
+
+let NERDTreeMinimalUI = 1
+let NERDTreeDirArrows = 1
+let NERDTreeAutoDeleteBuffer = 1
+let NERDTreeShowHidden=1
+
+let NERDTreeIgnore = ['\.pyc$', '\.egg-info$', '__pycache__', '__pycache__', '.DS_Store']
+" --- Git tools ---
+" Gitgutter settings
+let g:gitgutter_max_signs             = 5000
+let g:gitgutter_sign_added            = '+'
+let g:gitgutter_sign_modified         = '»'
+let g:gitgutter_sign_removed          = '_'
+let g:gitgutter_sign_modified_removed = '»╌'
+let g:gitgutter_map_keys              = 0
+let g:gitgutter_diff_args             = '--ignore-space-at-eol'
+set nowritebackup
+set fileformats=unix,dos,mac
+cnoremap WW w !sudo tee > /dev/null %
+let mapleader = ','
+let g:mapleader = ','
+set timeoutlen=3000 ttimeoutlen=100
+set updatetime=250
+
+let g:session_autosave  = 'no'
+let g:session_autoload  = 'no'
+let g:session_directory = '~/.vim/sessions/'
+let g:ale_sign_column_always = 1
+let g:ale_linters            = {
+	\ 'c'          : ['clang'],
+	\ 'python'     : ['pylint'],
+	\ 'javascript' : ['jshint'],
+	\ 'css'        : ['csslint'],
+	\ 'tex'        : ['chktex'],
+	\ }
+  " JS-Beautify
+  let g:config_Beautifier = {}
+  let g:config_Beautifier['js'] = {}
+  let g:config_Beautifier['js'].indent_style = 'tab'
+  let g:config_Beautifier['jsx'] = {}
+  let g:config_Beautifier['jsx'].indent_style = 'tab'
+  let g:config_Beautifier['json'] = {}
+  let g:config_Beautifier['json'].indent_style = 'tab'
+  let g:config_Beautifier['css'] = {}
+  let g:config_Beautifier['css'].indent_style = 'tab'
+  let g:config_Beautifier['html'] = {}
+  let g:config_Beautifier['html'].indent_style = 'tab'
+
+  let g:lightline = {
+        \ 'colorscheme': 'tender',
+        \ 'active': {
+        \   'left': [ [ 'mode', 'paste' ],
+        \             [ 'gitbranch', 'readonly', 'filename', 'modified' ] ],
+        \ },
+        \ 'component_function': {
+        \   'gitbranch': 'FugitiveHead',
+        \ },
+        \ }
+
+
+augroup beautify
+	autocmd!
+	autocmd FileType javascript nnoremap <buffer> <Leader>bf :call JsBeautify()<cr>
+	autocmd FileType javascript vnoremap <buffer> <Leader>bf :call RangeJsBeautify()<cr>
+	autocmd FileType json nnoremap <buffer> <Leader>bf :call JsonBeautify()<cr>
+	autocmd FileType json vnoremap <buffer> <Leader>bf :call RangeJsonBeautify()<cr>
+	autocmd FileType jsx nnoremap <buffer> <Leader>bf :call JsxBeautify()<cr>
+	autocmd FileType jsx vnoremap <buffer> <Leader>bf :call RangeJsxBeautify()<cr>
+	autocmd FileType html nnoremap <buffer> <Leader>bf :call HtmlBeautify()<cr>
+	autocmd FileType html vnoremap <buffer> <Leader>bf :call RangeHtmlBeautify()<cr>
+	autocmd FileType css nnoremap <buffer> <Leader>bf :call CSSBeautify()<cr>
+	autocmd FileType css vnoremap <buffer> <Leader>bf :call RangeCSSBeautify()<cr>
+augroup end
+
+function! RemoveFancyCharacters()
+    let typo = {}
+    let typo["“"] = '"'
+    let typo["”"] = '"'
+    let typo["‘"] = "'"
+    let typo["’"] = "'"
+    let typo["–"] = '--'
+    let typo["—"] = '---'
+    let typo["…"] = '...'
+    :exe ":%s/".join(keys(typo), '\|').'/\=typo[submatch(0)]/ge'
+endfunction
+command! RemoveFancyCharacters :call RemoveFancyCharacters()
+nmap <silent><Leader>f <Esc>:Pytest file<CR>
+nmap <silent><Leader>c <Esc>:Pytest class<CR>
+nmap <silent><Leader>m <Esc>:Pytest method<CR>
+nmap <silent><Leader>t <Esc>:Pytest function<CR>
+cnoremap WW w !sudo tee > /dev/null %
+nnoremap <Leader>tt :tabedit <C-R>=expand("%:p:h")<CR>/
+nnoremap <Leader>tr :execute 'silent! tabmove ' . (tabpagenr()-2)<CR>
+nnoremap <Leader>ty :execute 'silent! tabmove ' . tabpagenr()<CR>
+augroup md
+	autocmd FileType markdown,liquid,text set expandtab
+	autocmd FileType markdown,liquid,text
+				\ nnoremap <silent> <Leader>cc :call <SID>KeywordDensity()<CR>
+	autocmd FileType markdown,liquid,text nnoremap <silent> <Leader>dd g<C-g>
+	autocmd FileType markdown,liquid,text vnoremap <silent> <Leader>dd g<C-g>
+	autocmd FileType markdown,liquid,text
+				\ nnoremap <silent> gl :call search('\v\[[^]]*]\([^)]*\)')<CR>
+	autocmd FileType markdown,liquid,text
+				\ nnoremap <silent> gh :call search('\v\[[^]]*]\([^)]*\)', 'b')<CR>
+augroup end
+" Move the cursor to the line start
+inoremap <C-a> <C-O>0
+
+" Move the cursor to the line end
+inoremap <C-e> <C-O>$
+

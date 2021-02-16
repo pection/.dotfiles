@@ -1,0 +1,6 @@
+let g:netrw_dirhistmax  =10
+let g:netrw_dirhistcnt =4
+let g:netrw_dirhist_4='/home/pection'
+let g:netrw_dirhist_3='/home/pection/configurations/vim'
+let g:netrw_dirhist_2='/home/pection/configurations/vim/dot-vim'
+let g:netrw_dirhist_1='/home/pection'
