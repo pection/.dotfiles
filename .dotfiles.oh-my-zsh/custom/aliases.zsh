@@ -1,4 +1,5 @@
 # zsh
+alias cd..="cd '$OLDPWD'"
 alias python=python3
 alias pip=pip3
 alias ealias="vi /home/pection/.dotfiles/.dotfiles.oh-my-zsh/custom/aliases.zsh"
