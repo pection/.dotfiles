@@ -1,8 +1,13 @@
 # zsh
+alias python=python3
+alias pip=pip3
+alias ealias="vi /home/pection/.dotfiles/.dotfiles.oh-my-zsh/custom/aliases.zsh"
 alias zr="vi ~/.zshrc"
 alias zrg="gedit ~/.zshrc &!"
 alias zs="source ~/.zshrc"
-
+alias startpostgres="sudo systemctl start postgresql.sevice"
+alias stoppostgres="sudo systemctl stop postgresql.sevice"
+alias enablepostgres="sudo systemctl enable postgresql.sevice"
 ## ohmyzsh: $ZSH_CUSTOM
 alias zc="cd $ZSH_CUSTOM"
 alias zca="ccat $ZSH_CUSTOM/aliases.zsh"
