@@ -12,10 +12,9 @@ alias enablepostgres="sudo systemctl enable postgresql.sevice"
 ## ohmyzsh: $ZSH_CUSTOM
 alias zc="cd $ZSH_CUSTOM"
 alias zca="ccat $ZSH_CUSTOM/aliases.zsh"
-
-
+alias mikedir="/home/pection/Backup/Personal/ezfiledir"
 # cli
-
+alias type100="ttyper -w 100 -l english1000"
 ## os, preinstalled
 alias t="touch"
 alias e="exit"
@@ -98,5 +97,7 @@ alias copytoremote='scp -rp /path/to/local/dir usrname@orgname.edu:/path/to/remo
 alias lsgd='gio list -d'
 alias findfile='find . -iname $1' 
 alias rb=rbenv
-alias sshnopass="cat .ssh/id_rsa.pub | ssh np@192.168.1.50 'cat >> .ssh/authorized_keys'"
+alias sshnopass="cat .ssh/id_rsa.pub | ssh np@192.168.1.2 'cat >> .ssh/authorized_keys'"
+alias apt-get install='apt-get install -y'
+alias lynx='lynx -accept_all_cookies'
 
